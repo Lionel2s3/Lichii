@@ -134,6 +134,7 @@ ENUM(AstcRecompression, Uncompressed, Bc1, Bc3);
 ENUM(FramePacingMode, Target_Auto, Target_30, Target_60, Target_90, Target_120);
 ENUM(VSyncMode, Immediate, Mailbox, Fifo, FifoRelaxed);
 ENUM(VramUsageMode, Conservative, Aggressive);
+ENUM(PotatoMode, Auto, On, Off);
 ENUM(RendererBackend, OpenGL_GLSL, Vulkan, Null, OpenGL_GLASM, OpenGL_SPIRV);
 ENUM(GpuAccuracy, Low, High);
 ENUM(DmaAccuracy, Default, Unsafe, Safe);

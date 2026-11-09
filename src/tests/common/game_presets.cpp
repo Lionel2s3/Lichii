@@ -36,6 +36,20 @@ void CheckPreset(const Settings::Values& settings) {
     CHECK(settings.anti_aliasing.GetValue() == Settings::AntiAliasing::Fxaa);
 }
 
+void CheckPotatoPreset(const Settings::Values& settings) {
+    CHECK(settings.renderer_backend.GetValue() == Settings::RendererBackend::Vulkan);
+    CHECK(settings.resolution_setup.GetValue() == Settings::ResolutionSetup::Res3_4X);
+    CHECK(settings.gpu_accuracy.GetValue() == Settings::GpuAccuracy::Low);
+    CHECK(settings.use_asynchronous_shaders.GetValue());
+    CHECK(settings.astc_recompression.GetValue() == Settings::AstcRecompression::Bc3);
+    CHECK(settings.vram_usage_mode.GetValue() == Settings::VramUsageMode::Conservative);
+    CHECK_FALSE(settings.use_reactive_flushing.GetValue());
+    CHECK(settings.vsync_mode.GetValue() == Settings::VSyncMode::FifoRelaxed);
+    CHECK(settings.use_docked_mode.GetValue() == Settings::ConsoleMode::Handheld);
+    CHECK(settings.scaling_filter.GetValue() == Settings::ScalingFilter::Bilinear);
+    CHECK(settings.anti_aliasing.GetValue() == Settings::AntiAliasing::None);
+}
+
 void CheckPreferences(const Settings::Values& settings, bool global = false) {
     CHECK(settings.renderer_backend.GetValue(global) == Settings::RendererBackend::Null);
     CHECK(settings.resolution_setup.GetValue(global) == Settings::ResolutionSetup::Res2X);
@@ -96,6 +110,45 @@ TEST_CASE("MKW preset does not change unrelated games", "[game_presets]") {
     CheckPreferences(*settings);
     CHECK(settings->renderer_backend.UsingGlobal());
     CHECK(settings->resolution_setup.UsingGlobal());
+}
+
+TEST_CASE("Potato mode auto applies only to low-memory hosts", "[game_presets]") {
+    constexpr u64 FourGiB = 4ULL * 1024 * 1024 * 1024;
+    constexpr u64 EightGiB = 8ULL * 1024 * 1024 * 1024;
+    CHECK(Settings::PotatoModeShouldApply(Settings::PotatoMode::Auto, FourGiB));
+    CHECK(Settings::PotatoModeShouldApply(Settings::PotatoMode::Auto, EightGiB));
+    CHECK_FALSE(Settings::PotatoModeShouldApply(Settings::PotatoMode::Auto, EightGiB + 1));
+    CHECK_FALSE(Settings::PotatoModeShouldApply(Settings::PotatoMode::Auto, 0));
+    CHECK(Settings::PotatoModeShouldApply(Settings::PotatoMode::On, 0));
+    CHECK_FALSE(Settings::PotatoModeShouldApply(Settings::PotatoMode::Off, FourGiB));
+}
+
+TEST_CASE("Potato mode overrides saved settings for the session", "[game_presets]") {
+    auto settings = std::make_unique<Settings::Values>();
+    SetConflictingPreferences(*settings, false);
+    SetConflictingPreferences(*settings, true);
+    REQUIRE(Settings::ApplyPotatoPreset(*settings, Settings::PotatoMode::On, 0));
+    CheckPotatoPreset(*settings);
+    CheckPreferences(*settings, true);
+    CHECK_FALSE(settings->renderer_backend.UsingGlobal());
+    for (const auto& restore : settings->linkage.restore_functions) {
+        restore();
+    }
+    CheckPreferences(*settings);
+    CheckPreferences(*settings, true);
+}
+
+TEST_CASE("Potato mode leaves saved settings alone when off", "[game_presets]") {
+    constexpr u64 FourGiB = 4ULL * 1024 * 1024 * 1024;
+    constexpr u64 SixteenGiB = 16ULL * 1024 * 1024 * 1024;
+    auto settings = std::make_unique<Settings::Values>();
+    SetConflictingPreferences(*settings, false);
+    SetConflictingPreferences(*settings, true);
+    CHECK_FALSE(Settings::ApplyPotatoPreset(*settings, Settings::PotatoMode::Off, FourGiB));
+    CheckPreferences(*settings, true);
+    CHECK_FALSE(Settings::ApplyPotatoPreset(*settings, Settings::PotatoMode::Auto, SixteenGiB));
+    CheckPreferences(*settings, true);
+    CHECK(settings->potato_mode.UsingGlobal());
 }
 
 TEST_CASE("Declining the MKW preset preserves global and per-game preferences", "[game_presets]") {

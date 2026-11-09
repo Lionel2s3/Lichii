@@ -2101,6 +2101,17 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
         QtCommon::system->ApplySettings();
     }
 
+    // Potato Mode: low-end defaults for the host, before the per-game MKW recommendations
+    // below so that title's own choices still win.
+    const u64 host_memory = Common::GetMemInfo().TotalPhysicalMemory;
+    if (Settings::ApplyPotatoPreset(Settings::values, Settings::values.potato_mode.GetValue(),
+                                    host_memory)) {
+        QtCommon::system->ApplySettings();
+        Settings::UpdateGPUAccuracy();
+        LOG_INFO(Config, "Applied Potato Mode performance settings ({} MiB host memory)",
+                 host_memory >> 20);
+    }
+
     if (title_id == Settings::MarioKartWorldProgramId && !asked_recommended_mkw_settings) {
         asked_recommended_mkw_settings = true;
         use_recommended_mkw_settings =

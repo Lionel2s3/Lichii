@@ -92,6 +92,11 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
            tr("Synchronizes CPU core speed with the game's maximum rendering speed to boost FPS "
               "without affecting game speed (animations, physics, etc.).\n"
               "Can help reduce stuttering at lower framerates."));
+    INSERT(Settings, potato_mode, tr("Potato Mode (low-end performance)"),
+           tr("Applies a low-end preset when a game starts: 0.75x internal resolution, fast GPU "
+              "accuracy, BC3 ASTC textures, asynchronous shaders, no anti-aliasing and bilinear "
+              "upscaling.\nAuto applies it only when the host has 8 GiB of RAM or less. Your saved "
+              "settings are not changed and are restored when Lichii closes."));
 
     // Cpu
     INSERT(Settings, cpu_accuracy, tr("Accuracy:"),
@@ -562,6 +567,12 @@ std::unique_ptr<ComboboxTranslationMap> ComboboxEnumeration(QObject* parent) {
              PAIR(ResolutionSetup, Res7X, tr("7X (5040p/7560p)")),
              PAIR(ResolutionSetup, Res8X, tr("8X (5760p/8640p)")),
          }});
+    translations->insert({Settings::EnumMetadata<PotatoMode>::Index(),
+                          {
+                              PAIR(PotatoMode, Auto, tr("Auto (8 GiB RAM or less)")),
+                              PAIR(PotatoMode, On, tr("On")),
+                              PAIR(PotatoMode, Off, tr("Off")),
+                          }});
     translations->insert({Settings::EnumMetadata<Settings::FrameGenType>::Index(),
                           {
                               PAIR(FrameGenType, Lsfg, tr("Lossless Scaling (LSFG)")),

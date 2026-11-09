@@ -58,6 +58,7 @@ SWITCHABLE(GpuAccuracy, true);
 SWITCHABLE(Language, true);
 SWITCHABLE(MemoryLayout, true);
 SWITCHABLE(NvdecEmulation, false);
+SWITCHABLE(PotatoMode, true);
 SWITCHABLE(Region, true);
 SWITCHABLE(RendererBackend, true);
 SWITCHABLE(ScalingFilter, false);

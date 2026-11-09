@@ -91,22 +91,26 @@ TEST_CASE("Core pinning: 8 cores, 16 threads", "[common][core_pinning]") {
     CheckCoresAreDedicated(processors, plan);
 }
 
-TEST_CASE("Core pinning: 6 cores, 12 threads", "[common][core_pinning]") {
-    const auto processors = Uniform(6, 2);
-    const auto plan = Common::PlanGpuThreadPinning(processors);
+TEST_CASE("Core pinning: 6 cores, 12 threads is skipped", "[common][core_pinning]") {
+    // Six emulated cores need all six cores: pinning two to the GPU leaves four for six guests.
+    const auto plan = Common::PlanGpuThreadPinning(Uniform(6, 2));
     CHECK(plan.performance_cores == 6);
-    CHECK(plan.front == Ids(2, 2));
-    CHECK(plan.back == Ids(4, 2));
-    CHECK(plan.guest == Concat(Ids(0, 2), Ids(6, 6)));
-    CheckCoresAreDedicated(processors, plan);
+    CheckSkipped(plan);
 }
 
-TEST_CASE("Core pinning: 6 cores without SMT", "[common][core_pinning]") {
-    const auto processors = Uniform(6, 1);
+TEST_CASE("Core pinning: 6 cores without SMT is skipped", "[common][core_pinning]") {
+    const auto plan = Common::PlanGpuThreadPinning(Uniform(6, 1));
+    CHECK(plan.performance_cores == 6);
+    CheckSkipped(plan);
+}
+
+TEST_CASE("Core pinning: 8 cores without SMT", "[common][core_pinning]") {
+    const auto processors = Uniform(8, 1);
     const auto plan = Common::PlanGpuThreadPinning(processors);
+    CHECK(plan.performance_cores == 8);
     CHECK(plan.front == Ids(1, 1));
     CHECK(plan.back == Ids(2, 1));
-    CHECK(plan.guest == Concat(Ids(0, 1), Ids(3, 3)));
+    CHECK(plan.guest == Concat(Ids(0, 1), Ids(3, 5)));
     CheckCoresAreDedicated(processors, plan);
 }
 
@@ -122,17 +126,14 @@ TEST_CASE("Core pinning: hybrid 8 P-cores with SMT and 16 E-cores", "[common][co
     CheckCoresAreDedicated(processors, plan);
 }
 
-TEST_CASE("Core pinning: E-cores enumerated first leave the P-cores to the pinned threads",
+TEST_CASE("Core pinning: 6 performance cores among E-cores is skipped",
           "[common][core_pinning]") {
     std::vector<LogicalProcessor> processors;
     AddCores(processors, 4, 1, 0);
     AddCores(processors, 6, 2, 1);
     const auto plan = Common::PlanGpuThreadPinning(processors);
     CHECK(plan.performance_cores == 6);
-    CHECK(plan.front == Ids(6, 2));
-    CHECK(plan.back == Ids(8, 2));
-    CHECK(plan.guest == Concat(Ids(4, 2), Ids(10, 6)));
-    CheckCoresAreDedicated(processors, plan);
+    CheckSkipped(plan);
 }
 
 TEST_CASE("Core pinning: hybrid 4 P-cores and 8 E-cores is skipped", "[common][core_pinning]") {

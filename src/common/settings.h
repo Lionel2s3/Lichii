@@ -76,6 +76,7 @@ SWITCHABLE(GpuAccuracy, true);
 SWITCHABLE(Language, true);
 SWITCHABLE(MemoryLayout, true);
 SWITCHABLE(NvdecEmulation, false);
+SWITCHABLE(PotatoMode, true);
 SWITCHABLE(Region, true);
 SWITCHABLE(RendererBackend, true);
 SWITCHABLE(ScalingFilter, false);
@@ -252,6 +253,17 @@ struct Values {
 
     SwitchableSetting<bool> sync_core_speed{linkage, false, "sync_core_speed", Category::Core,
                                             Specialization::Default};
+
+    // Low-end performance preset applied when a game starts (common/game_presets.h). Auto applies
+    // it only on hosts with 8 GiB of RAM or less. Its overrides last until Lichii closes and the
+    // saved settings are left untouched.
+    SwitchableSetting<PotatoMode, true> potato_mode{linkage,
+                                                    PotatoMode::Auto,
+                                                    "potato_mode",
+                                                    Category::Core,
+                                                    Specialization::Default,
+                                                    true,
+                                                    true};
 
     // Cpu
     SwitchableSetting<CpuBackend, true> cpu_backend{linkage,
