@@ -91,26 +91,28 @@ jobs:
       # binary built with -march=znver3 would fault on any host older than Zen 3. The znver3
       # preset is for local GCC/clang builds of this fork.
       - name: Configure
-        run: >-
-          cmake -S . -B build/potato -G Ninja
-          -DCMAKE_BUILD_TYPE=Release
-          "-DCMAKE_C_COMPILER=$LLVM_ROOT/bin/clang-cl.exe"
-          "-DCMAKE_CXX_COMPILER=$LLVM_ROOT/bin/clang-cl.exe"
-          "-DCMAKE_LINKER=$LLVM_ROOT/bin/lld-link.exe"
-          "-DCMAKE_AR=$LLVM_ROOT/bin/llvm-lib.exe"
-          "-DCMAKE_C_FLAGS=/arch:AVX2 -DWIN32 -D_WINDOWS -DNOMINMAX"
-          "-DCMAKE_CXX_FLAGS=/arch:AVX2 -DWIN32 -D_WINDOWS -EHsc -DNOMINMAX"
-          -DBUILD_TESTING=OFF
-          -DYUZU_TESTS=OFF
-          -DENABLE_QT=ON
-          -DYUZU_CMD=ON
-          -DYUZU_ROOM=OFF
-          -DYUZU_ROOM_STANDALONE=OFF
-          -DYUZU_USE_BUNDLED_QT=OFF
-          -DYUZU_USE_BUNDLED_SDL3=ON
-          -DENABLE_UPDATE_CHECKER=OFF
-          -DUSE_DISCORD_PRESENCE=OFF
-          -DUSE_CCACHE=ON
+        run: |
+          set -o pipefail
+          mkdir -p build/logs
+          cmake -S . -B build/potato -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            "-DCMAKE_C_COMPILER=$LLVM_ROOT/bin/clang-cl.exe" \
+            "-DCMAKE_CXX_COMPILER=$LLVM_ROOT/bin/clang-cl.exe" \
+            "-DCMAKE_LINKER=$LLVM_ROOT/bin/lld-link.exe" \
+            "-DCMAKE_AR=$LLVM_ROOT/bin/llvm-lib.exe" \
+            "-DCMAKE_C_FLAGS=/arch:AVX2 -DWIN32 -D_WINDOWS -DNOMINMAX" \
+            "-DCMAKE_CXX_FLAGS=/arch:AVX2 -DWIN32 -D_WINDOWS -EHsc -DNOMINMAX" \
+            -DBUILD_TESTING=OFF \
+            -DYUZU_TESTS=OFF \
+            -DENABLE_QT=ON \
+            -DYUZU_CMD=ON \
+            -DYUZU_ROOM=OFF \
+            -DYUZU_ROOM_STANDALONE=OFF \
+            -DYUZU_USE_BUNDLED_QT=OFF \
+            -DYUZU_USE_BUNDLED_SDL3=ON \
+            -DENABLE_UPDATE_CHECKER=OFF \
+            -DUSE_DISCORD_PRESENCE=OFF \
+            -DUSE_CCACHE=ON 2>&1 | tee build/logs/configure.log
 
       - name: Build
         env:
@@ -118,7 +120,7 @@ jobs:
         run: |
           set -euo pipefail
           ccache --zero-stats
-          cmake --build build/potato --target yuzu yuzu-cmd --parallel
+          cmake --build build/potato --target yuzu yuzu-cmd --parallel 2>&1 | tee build/logs/build.log
           ccache --show-stats
 
       - name: Package
@@ -151,3 +153,16 @@ jobs:
             .cache/cpm
             .ccache
           key: potato-clang-cl-${{ runner.os }}-${{ github.sha }}
+
+      # A failed job log is only readable in the browser and expires; keep the raw
+      # configure/build output and CMake's own probe log next to the run instead.
+      - name: Upload failure logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: project-potato-switch-2-failure-logs
+          path: |
+            build/logs/*.log
+            build/potato/CMakeFiles/CMakeConfigureLog.yaml
+          if-no-files-found: warn
+          retention-days: 7
