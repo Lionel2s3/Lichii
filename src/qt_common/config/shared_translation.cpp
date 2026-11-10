@@ -567,7 +567,7 @@ std::unique_ptr<ComboboxTranslationMap> ComboboxEnumeration(QObject* parent) {
              PAIR(ResolutionSetup, Res7X, tr("7X (5040p/7560p)")),
              PAIR(ResolutionSetup, Res8X, tr("8X (5760p/8640p)")),
          }});
-    translations->insert({Settings::EnumMetadata<PotatoMode>::Index(),
+    translations->insert({Settings::EnumMetadata<Settings::PotatoMode>::Index(),
                           {
                               PAIR(PotatoMode, Auto, tr("Auto (8 GiB RAM or less)")),
                               PAIR(PotatoMode, On, tr("On")),
